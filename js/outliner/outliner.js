@@ -78,16 +78,16 @@ Object.defineProperty(window, 'selected', {
 });
 //Colors
 var markerColors = [
-	{pastel: "#A2EBFF", standard: "#58C0FF", name: 'light_blue'},
-	{pastel: "#FFF899", standard: "#F4D714", name: 'yellow'},
-	{pastel: "#F1BB75", standard: "#EC9218", name: 'orange'},
-	{pastel: "#FF9B97", standard: "#FA565D", name: 'red'},
-	{pastel: "#C5A6E8", standard: "#B55AF8", name: 'purple'},
-	{pastel: "#A6C8FF", standard: "#4D89FF", name: 'blue'},
-	{pastel: "#7BFFA3", standard: "#00CE71", name: 'green'},
-	{pastel: "#BDFFA6", standard: "#AFFF62", name: 'lime'},
-	{pastel: "#FFA5D5", standard: "#F96BC5", name: 'pink'},
-	{pastel: "#E0E9FB", standard: "#C7D5F6", name: 'silver'}
+	{pastel: "#A2EBFF", standard: "#58C0FF", id: 'light_blue'},
+	{pastel: "#FFF899", standard: "#F4D714", id: 'yellow'},
+	{pastel: "#F1BB75", standard: "#EC9218", id: 'orange'},
+	{pastel: "#FF9B97", standard: "#FA565D", id: 'red'},
+	{pastel: "#C5A6E8", standard: "#B55AF8", id: 'purple'},
+	{pastel: "#A6C8FF", standard: "#4D89FF", id: 'blue'},
+	{pastel: "#7BFFA3", standard: "#00CE71", id: 'green'},
+	{pastel: "#BDFFA6", standard: "#AFFF62", id: 'lime'},
+	{pastel: "#FFA5D5", standard: "#F96BC5", id: 'pink'},
+	{pastel: "#E0E9FB", standard: "#C7D5F6", id: 'silver'}
 ]
 class OutlinerNode {
 	constructor(uuid) {
@@ -102,8 +102,6 @@ class OutlinerNode {
 			this.addTo('root')
 		}
 		return this;
-
-		
 	}
 	get preview_controller() {
 		return this.constructor.preview_controller;
@@ -228,7 +226,6 @@ class OutlinerNode {
 	remove() {
 		if (this.preview_controller) this.preview_controller.remove(this);
 		this.constructor.all.remove(this);
-
 		if (OutlinerNode.uuids[this.uuid] == this) delete OutlinerNode.uuids[this.uuid];
 		this.removeFromParent();
 	}
@@ -363,19 +360,6 @@ class OutlinerElement extends OutlinerNode {
 		selected.remove(this);
 		elements.remove(this);
 		this.constructor.selected.remove(this);
-		
-		// Remove Empty Material Group 
-		if (this.hasOwnProperty('parent') && this.title == 'Cube' && this.parent.title == 'Group' && this.parent.hasOwnProperty('children')) {
-			if (this.parent.children.length === 0) {
-				getBoneMaterials().map((mat) => {
-					if (this.parent.name.includes(mat.value) && mat.value.length != 0) {
-						this.parent.remove();
-						return this;
-					}        
-				})
-			}
-		}
-
 		return this;
 	}
 	showContextMenu(event) {
@@ -423,6 +407,7 @@ class OutlinerElement extends OutlinerNode {
 		} else {
 			selected.push(copy)
 		}
+		Property.resetUniqueValues(this.constructor, copy);
 		if (Condition(copy.needsUniqueName)) {
 			copy.createUniqueName()
 		}
@@ -430,7 +415,7 @@ class OutlinerElement extends OutlinerNode {
 		return copy;
 	}
 	select(event, isOutlinerClick) {
-		if (Modes.animate && this.constructor != NullObject) return false;
+		if (Modes.animate && !this.constructor.animator) return false;
 		//Shiftv
 		var just_selected = []
 		if (event && (event.shiftKey === true || Pressing.overrides.shift) && this.getParentArray().includes(selected[selected.length-1]) && !Modes.paint && isOutlinerClick) {
@@ -542,6 +527,7 @@ class OutlinerElement extends OutlinerNode {
 class NodePreviewController {
 	constructor(type, data = {}) {
 		this.type = type;
+		this.events = {};
 		type.preview_controller = this;
 
 		this.updateGeometry = null;
@@ -561,6 +547,8 @@ class NodePreviewController {
 		mesh.visible = element.visibility;
 		mesh.rotation.order = 'ZYX';
 		this.updateTransform(element);
+
+		this.dispatchEvent('setup', {element});
 	}
 	remove(element) {
 		let {mesh} = element;
@@ -573,6 +561,8 @@ class NodePreviewController {
 			}
 		}
 		delete Project.nodes_3d[element.uuid];
+
+		this.dispatchEvent('remove', {element});
 	}
 	updateAll(element) {
 		if (!element.mesh) this.setup(element);
@@ -582,6 +572,8 @@ class NodePreviewController {
 		if (this.updateUV) this.updateUV(element);
 		if (this.updateFaces) this.updateFaces(element);
 		if (this.updatePaintingGrid) this.updatePaintingGrid(element);
+
+		this.dispatchEvent('update_all', {element});
 	}
 	updateTransform(element) {
 		let mesh = element.mesh;
@@ -620,14 +612,43 @@ class NodePreviewController {
 		}
 
 		mesh.updateMatrixWorld();
+
+		this.dispatchEvent('update_transform', {element});
 	}
 	updateVisibility(element) {
 		element.mesh.visible = element.visibility;
+
+		this.dispatchEvent('update_visibility', {element});
 	}
 	updateSelection(element) {
 		let {mesh} = element;
 		if (mesh && mesh.outline) {
 			mesh.outline.visible = element.selected
+		}
+
+		this.dispatchEvent('update_selection', {element});
+	}
+
+	//Events
+	dispatchEvent(event_name, data) {
+		if (!this.events) return;
+		var list = this.events[event_name]
+		if (!list) return;
+		for (var i = 0; i < list.length; i++) {
+			if (typeof list[i] === 'function') {
+				list[i](data)
+			}
+		}
+	}
+	on(event_name, cb) {
+		if (!this.events[event_name]) {
+			this.events[event_name] = []
+		}
+		this.events[event_name].safePush(cb)
+	}
+	removeListener(event_name, cb) {
+		if (this.events[event_name]) {
+			this.events[event_name].remove(cb);
 		}
 	}
 }
@@ -926,20 +947,15 @@ function toggleCubeProperty(key) {
 StateMemory.init('advanced_outliner_toggles', 'boolean')
 
 BARS.defineActions(function() {
-	new Action('toggle_material_groups', {
-		icon: 'fa-folder-open',
+	new Toggle('outliner_toggle', {
+		icon: 'dns',
 		category: 'edit',
-		keybind: new Keybind({key: 'm', ctrl: true}),
-		click: function () {
-			if (isMatGroupVisible === undefined || isMatGroupVisible === false) {
-				isMatGroupVisible = true;
-			} else {
-				isMatGroupVisible = false;
-			}
-			// THIS IS SUCH A HACK ;_; (works tho)
-			Interface.Panels.outliner.inside_vue.$children.map((element) => {
-				element.forceRerender();
-			});
+		keybind: new Keybind({key: 115}),
+		default: StateMemory.advanced_outliner_toggles,
+		onChange: function (value) {
+			Outliner.vue.options.show_advanced_toggles = value;
+			StateMemory.advanced_outliner_toggles = value;
+			StateMemory.save('advanced_outliner_toggles');
 		}
 	})
 	new BarText('cube_counter', {
@@ -1008,7 +1024,7 @@ BARS.defineActions(function() {
 				return {
 					name: group.name,
 					icon: 'folder',
-					color: markerColors[group.color] && markerColors[group.color].standard,
+					color: markerColors[group.color % markerColors.length] && markerColors[group.color % markerColors.length].standard,
 					click(event) {
 						moveOutlinerSelectionTo(element, group, event);
 						element.showInOutliner();
@@ -1062,7 +1078,7 @@ BARS.defineActions(function() {
 				'-1': 'generic.all'
 			}
 			markerColors.forEach((color, i) => {
-				color_options[i] = 'cube.color.' + color.name;
+				color_options[i] = color.name || 'cube.color.' + color.id;
 			})
 			let type_options = {
 				all: 'generic.all'
@@ -1161,48 +1177,68 @@ BARS.defineActions(function() {
 		category: 'edit',
 		condition: () => !Modes.display,
 		keybind: new Keybind({key: 'a', ctrl: true}),
-		click: function () {selectAll()}
+		click() {selectAll()}
+	})
+	new Action('unselect_all', {
+		icon: 'border_clear',
+		category: 'edit',
+		condition: () => !Modes.display,
+		click() {
+			if (Modes.animate) {
+				unselectAllKeyframes()
+			} else if (Prop.active_panel == 'uv') {
+				this.vue.selected_faces.empty();
+				UVEditor.displayTools();
+		
+			} else if (Modes.edit && Mesh.selected.length && Mesh.selected.length === Outliner.selected.length && BarItems.selection_mode.value !== 'object') {
+				Mesh.selected.forEach(mesh => {
+					delete Project.selected_vertices[mesh.uuid];
+				})
+				updateSelection();
+		
+			} else if (Modes.edit || Modes.paint) {
+				unselectAll()
+			}
+			Blockbench.dispatchEvent('select_all')
+		}
 	})
 
-	let enabled = false;
-	let were_hidden_before = [];
 	new Action('hide_everything_except_selection', {
 		icon: 'fa-glasses',
 		category: 'view',
 		keybind: new Keybind({key: 'i'}),
 		condition: {modes: ['edit', 'paint']},
 		click() {
-			enabled = !enabled;
+			let enabled = !Project.only_hidden_elements;
 
-			let affected = Project.elements.filter(el => typeof el.visibility == 'boolean' && (!el.selected || were_hidden_before.includes(el.uuid)));
-			Undo.initEdit({elements: affected})
-			affected.forEach(el => {
-				if (enabled) {
-					if (el.visibility) were_hidden_before.push(el.uuid);
-					el.visibility = !!el.selected;
-				} else {
-					el.visibility = were_hidden_before.includes(el.uuid);
-				}
-			})
-			if (!enabled) were_hidden_before.empty();
+			if (Project.only_hidden_elements) {
+				let affected = Project.elements.filter(el => typeof el.visibility == 'boolean' && Project.only_hidden_elements.includes(el.uuid));
+				Undo.initEdit({elements: affected})
+				affected.forEach(el => {
+					el.visibility = true;
+				})
+				delete Project.only_hidden_elements;
+			} else {
+				let affected = Project.elements.filter(el => typeof el.visibility == 'boolean' && !el.selected && el.visibility);
+				Undo.initEdit({elements: affected})
+				affected.forEach(el => {
+					el.visibility = false;
+				})
+				Project.only_hidden_elements = affected.map(el => el.uuid);
+			}
+
 			Canvas.updateVisibility();
 			Undo.finishEdit('Toggle visibility on everything except selection');
 		}
 	})
-	Blockbench.on('unselect_project', () => {
-		enabled = false;
-		were_hidden_before.empty();
-	})
 })
 
 Interface.definePanels(function() {
+
 	var VueTreeItem = Vue.extend({
 		template: 
-		'<li :key="updateMaterial" class="outliner_node" v-bind:class="{ parent_li: node.children && node.children.length > 0}" v-bind:id="node.uuid" >' +
-			// Can hide group from here!
+		'<li class="outliner_node" v-bind:class="{ parent_li: node.children && node.children.length > 0}" v-bind:id="node.uuid">' +
 			`<div
-				:key="updateMaterial"
-				v-if="material_directory == false"
 				class="outliner_object"
 				v-bind:class="{ cube: node.type === 'cube', group: node.type === 'group', selected: node.selected }"
 				v-bind:style="{'padding-left': indentation + 'px'}"
@@ -1211,27 +1247,19 @@ Interface.definePanels(function() {
 				@touchstart="node.select($event)" :title="node.title"
 				@dblclick.stop.self="!node.locked && renameOutliner()"
 			>` +
-
-				// Opener
-				`<i :key="updateMaterial" v-if="node.children && node.children.length > 0 && (!options.hidden_types.length || node.children.some(node => !options.hidden_types.includes(node.type)))" v-on:click.stop="node.isOpen = !node.isOpen" class="icon-open-state fa" :class='{"fa-angle-right": !node.isOpen, "fa-angle-down": node.isOpen}'></i>
-				<i v-else class="outliner_opener_placeholder"></i>` +
-
-				// Material pipe icon
-				`<b :key="updateMaterial" v-if="!node.children"
-					:style="{'color': get_material_color, 'padding-left': '3px', 'padding-right': '3px'}"
-				> | </b>` +
-
-				// Cube or Folder icon
-				`<i 
-					:key="updateMaterial"
-					:class="node.icon.substring(0, 2) == 'fa' ? node.icon : 'material-icons'"
-					:style="(outliner_colors.value && node.color >= 0) && {color: markerColors[node.color].pastel}"
-					v-on:dblclick.stop="doubleClickIcon(node)"
-				>{{ node.icon.substring(0, 2) == 'fa' ? '' : node.icon }}</i>` +
+				//Opener
 				
-				// Main
-				'<input :key="updateMaterial" type="text" class="cube_name tab_target" :class="{locked: node.locked}" v-model="node.name" disabled>' +
-				`<i :key="updateMaterial" v-for="btn in node.buttons"
+				`<i v-if="node.children && node.children.length > 0 && (!options.hidden_types.length || node.children.some(node => !options.hidden_types.includes(node.type)))" v-on:click.stop="node.isOpen = !node.isOpen" class="icon-open-state fa" :class='{"fa-angle-right": !node.isOpen, "fa-angle-down": node.isOpen}'></i>
+				<i v-else class="outliner_opener_placeholder"></i>
+
+				<i :class="node.icon.substring(0, 2) == 'fa' ? node.icon : 'material-icons'"
+					:style="(outliner_colors.value && node.color >= 0) && {color: markerColors[node.color % markerColors.length].pastel}"
+					v-on:dblclick.stop="doubleClickIcon(node)"
+				>{{ node.icon.substring(0, 2) == 'fa' ? '' : node.icon }}</i>
+				<input type="text" class="cube_name tab_target" :class="{locked: node.locked}" v-model="node.name" disabled>` +
+
+
+				`<i v-for="btn in node.buttons"
 					v-if="(!btn.advanced_option || options.show_advanced_toggles || (btn.id === 'locked' && node.isIconEnabled(btn)))"
 					class="outliner_toggle"
 					:class="getBtnClasses(btn, node)"
@@ -1239,10 +1267,9 @@ Interface.definePanels(function() {
 					:toggle="btn.id"
 					@click.stop
 				></i>` +
-
 			'</div>' +
-			// Other Entries
-			'<ul :key="updateMaterial" v-if="node.isOpen">' +
+			//Other Entries
+			'<ul v-if="node.isOpen">' +
 				'<vue-tree-item v-for="item in visible_children" :node="item" :options="options" :key="item.uuid"></vue-tree-item>' +
 				`<div class="outliner_line_guide" v-if="node.constructor.selected == node" v-bind:style="{left: indentation + 'px'}"></div>` +
 			'</ul>' +
@@ -1251,19 +1278,14 @@ Interface.definePanels(function() {
 			options: Object,
 			node: {
 				type: Object
-			},
-			updateMaterial: Number,
+			}
 		},
 		data() {return {
 			outliner_colors: settings.outliner_colors
 		}},
 		computed: {
 			indentation() {
-				if (this.node.material && isMatGroupVisible) {
-					return (this.node.getDepth) ? (limitNumber(this.node.getDepth() - 1, 0, (this.width-100) / 16) * 16) : 0;
-				} else {
-					return this.node.getDepth ? (limitNumber(this.node.getDepth(), 0, (this.width-100) / 16) * 16) : 0;
-				}
+				return this.node.getDepth ? (limitNumber(this.node.getDepth(), 0, (this.width-100) / 16) * 16) : 0;
 			},
 			visible_children() {
 				if (!this.options.hidden_types.length) {
@@ -1271,42 +1293,7 @@ Interface.definePanels(function() {
 				} else {
 					return this.node.children.filter(node => !this.options.hidden_types.includes(node.type));
 				}
-			},
-			// Check if group is a material group
-			material_directory() {
-				if (typeof getBoneMaterials === 'function') { 
-					materials = getBoneMaterials();
-				} else {
-					matrials = []
-				}
-				
-				let materialFound = false
-				if (isMatGroupVisible) {
-					materials.map((material) => {
-						if (this.node.name.includes(material.value) && (material.value != "")) {
-							materialFound = true
-						}
-					})
-					return materialFound
-				} else {
-					return false
-				}
-			},
-			get_material_color() {
-				if (typeof getBoneMaterials === 'function') { 
-					materials = getBoneMaterials();
-				} else {
-					matrials = []
-				}
-				let materialColor = "white"
-				materials.map((material) => {
-					if ((this.node.parent != 'root' && this.node.parent.name.includes(material.value) && (material.value != ""))) {
-						this.node.material = material.value;
-						materialColor = material.color;
-					}
-				})
-				return materialColor;
-			},
+			}
 		},
 		methods: {
 			nodeClass: function (node) {
@@ -1331,34 +1318,6 @@ Interface.definePanels(function() {
 					node.isOpen = !node.isOpen;
 				}
 			},
-		
-			// Triggers vue element re-render
-			forceRerender() {
-				if (this.updateMaterial == undefined || this.updateMaterial == NaN) {
-					this.updateMaterial = 1;
-				} else {
-					this.updateMaterial += 1;
-				}
-
-				if (typeof getBoneMaterials === 'function') { 
-					materials = getBoneMaterials();
-				} else {
-					matrials = []
-				}
-
-				// Open all material groups
-				getAllGroups().map((child) => {
-					if (child.title == 'Group') {
-						materials.map((mat) => {
-							if (child.name.includes(mat.value) && mat.value.length != 0) {
-								if (child.isOpen == false) {
-									child.isOpen = true;
-								}
-							}        
-						})
-					}
-				});
-		},
 			renameOutliner
 		}
 	});

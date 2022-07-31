@@ -2,4 +2,3 @@
 index.php
 electron-builder.env
 node_modules/
-*.bbmodel
