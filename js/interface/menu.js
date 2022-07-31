@@ -47,8 +47,6 @@ class Menu {
 		this.node = $('<ul class="contextMenu"></ul>')[0]
 		this.structure = structure;
 		this.options = options || {};
-		this.onOpen = this.options.onOpen;
-		this.onClose = this.options.onClose;
 	}
 	hover(node, event, expand) {
 		if (event) event.stopPropagation()
@@ -150,7 +148,6 @@ class Menu {
 		return used;
 	}
 	open(position, context) {
-		if (this.onOpen) this.onOpen(position, context);
 
 		if (position && position.changedTouches) {
 			convertTouchEvent(position);
@@ -234,9 +231,6 @@ class Menu {
 							menu_node.append(item.node);
 						}
 					})
-				}
-				if (menu_node == ctxmenu) {
-					input.focus();
 				}
 
 			} else {
@@ -445,7 +439,6 @@ class Menu {
 		return this.open(position);
 	}
 	hide() {
-		if (this.onClose) this.onClose();
 		$(this.node).find('li.highlighted').removeClass('highlighted');
 		$(this.node).detach()
 		open_menu = null;
@@ -539,7 +532,7 @@ class Menu {
 }
 class BarMenu extends Menu {
 	constructor(id, structure, options = {}) {
-		super(id, structure, options)
+		super()
 		var scope = this;
 		MenuBar.menus[id] = this
 		this.type = 'bar_menu'
@@ -591,32 +584,21 @@ const MenuBar = {
 			'_',
 			{name: 'menu.file.new', id: 'new', icon: 'insert_drive_file',
 				children: function() {
-					let arr = [];
+					var arr = [];
 					let redact = settings.streamer_mode.value;
-					for (let key in Formats) {
-						let format = Formats[key];
-						arr.push({
-							id: format.id,
-							name: (redact && format.confidential) ? `[${tl('generic.redacted')}]` : format.name,
-							icon: format.icon,
-							description: format.description,
-							click: (e) => {
-								format.new()
-							}
-						})
-					}
-					arr.push('_');
-					for (let key in ModelLoader.loaders) {
-						let loader = ModelLoader.loaders[key];
-						arr.push({
-							id: loader.id,
-							name: (redact && loader.confidential) ? `[${tl('generic.redacted')}]` : loader.name,
-							icon: loader.icon,
-							description: loader.description,
-							click: (e) => {
-								loader.new()
-							}
-						})
+					for (var key in Formats) {
+						(function() {
+							var format = Formats[key];
+							arr.push({
+								id: format.id,
+								name: (redact && format.confidential) ? `[${tl('generic.redacted')}]` : format.name,
+								icon: format.icon,
+								description: format.description,
+								click: (e) => {
+									format.new()
+								}
+							})
+						})()
 					}
 					return arr;
 				}
@@ -763,7 +745,6 @@ const MenuBar = {
 			'_',
 			'select_window',
 			'select_all',
-			'unselect_all',
 			'invert_selection'
 		])
 		new BarMenu('transform', [
@@ -799,14 +780,6 @@ const MenuBar = {
 		], {
 			condition: {modes: ['edit']}
 		})
-
-		new BarMenu('uv', UVEditor.menu.structure, {
-			condition: {modes: ['edit']},
-			onOpen() {
-				setActivePanel('uv');
-			}
-		})
-
 		new BarMenu('texture', [
 			'adjust_brightness_contrast',
 			'adjust_saturation_hue',
@@ -818,43 +791,6 @@ const MenuBar = {
 			'resize_texture'
 		], {
 			condition: {modes: ['paint']}
-		})
-
-		new BarMenu('animation', [
-			'add_marker',
-			'lock_motion_trail',
-			'_',
-			'select_effect_animator',
-			'flip_animation',
-			'bake_animation_into_model',
-			'_',
-			'load_animation_file',
-			'save_all_animations',
-			'export_animation_file'
-		], {
-			condition: {modes: ['animate']}
-		})
-
-		new BarMenu('keyframe', [
-			'copy',
-			'paste',
-			'_',
-			'add_keyframe',
-			'keyframe_column_create',
-			'select_all',
-			'keyframe_column_select',
-			'reverse_keyframes',
-			{name: 'menu.animation.flip_keyframes', id: 'flip_keyframes', condition: () => Timeline.selected.length, icon: 'flip', children: [
-				'flip_x',
-				'flip_y',
-				'flip_z'
-			]},
-			'keyframe_uniform',
-			'reset_keyframe',
-			'resolve_keyframe_expressions',
-			'delete',
-		], {
-			condition: {modes: ['animate']}
 		})
 
 		new BarMenu('display', [
@@ -897,11 +833,37 @@ const MenuBar = {
 		])
 		MenuBar.menus.filter = MenuBar.menus.tools;
 
+		new BarMenu('animation', [
+			'copy',
+			'paste',
+			'select_all',
+			'add_keyframe',
+			'add_marker',
+			'reverse_keyframes',
+			{name: 'menu.animation.flip_keyframes', id: 'flip_keyframes', condition: () => Timeline.selected.length, icon: 'flip', children: [
+				'flip_x',
+				'flip_y',
+				'flip_z'
+			]},
+			'flip_animation',
+			'delete',
+			'lock_motion_trail',
+			'_',
+			'select_effect_animator',
+			'bake_animation_into_model',
+			'_',
+			'load_animation_file',
+			'save_all_animations',
+			'export_animation_file'
+		], {
+			condition: {modes: ['animate']}
+		})
+
+
 		new BarMenu('view', [
 			'fullscreen',
 			'_',
 			'view_mode',
-			'preview_scene',
 			'toggle_shading',
 			'toggle_motion_trails',
 			'toggle_ground_plane',
@@ -925,7 +887,7 @@ const MenuBar = {
 			{name: 'menu.help.discord', id: 'discord', icon: 'fab.fa-discord', click: () => {
 				Blockbench.openLink('http://discord.blockbench.net');
 			}},
-			{name: 'menu.help.quickstart', id: 'quickstart', icon: 'fas.fa-directions', click: () => {
+			{name: 'menu.help.quickstart', id: 'discord', icon: 'fas.fa-directions', click: () => {
 				Blockbench.openLink('https://blockbench.net/quickstart/');
 			}},
 			{name: 'menu.help.wiki', id: 'wiki', icon: 'menu_book', click: () => {

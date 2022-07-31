@@ -51,7 +51,6 @@ class Property {
 		if (options.condition) this.condition = options.condition;
 		if (options.exposed == false) this.exposed = false;
 		if (options.export == false) this.export = false;
-		if (options.copy_value == false) this.copy_value = false;
 		if (options.label) this.label = options.label;
 		if (options.description) this.description = options.description;
 		if (options.options) this.options = options.options;
@@ -117,14 +116,6 @@ class Property {
 			instance[this.name].replace(dft || []);
 		} else {
 			instance[this.name] = dft;
-		}
-	}
-}
-Property.resetUniqueValues = function(type, instance) {
-	for (var key in type.properties) {
-		let property = type.properties[key];
-		if (property.copy_value == false) {
-			property.reset(instance);
 		}
 	}
 }

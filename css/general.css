@@ -265,23 +265,7 @@
 	@-moz-keyframes spin { 100% { -moz-transform: rotate(360deg); } }
 	@-webkit-keyframes spin { 100% { -webkit-transform: rotate(360deg); } }
 	@keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
-/*Markdown*/
-	.markdown li {
-		list-style: initial;
-		cursor: inherit;
-	}
-	.markdown ul {
-		padding-left: 24px;
-	}
-	.markdown ol {
-		padding-left: 24px;
-	}
-	.markdown ol li {
-		list-style: auto;
-	}
-	.markdown a {
-		cursor: pointer;
-	}
+
 
 /*Actions*/
 	.toolbar {
@@ -343,18 +327,14 @@
 		color: var(--color-text);
 	}
 	.tool i {
-		display: block;
-		margin: 4px auto;
+		display: inline-block;
+		margin-top: 4px;
 	}
 	.tool:active .icon {
 		padding-top: 1px;
 	}
 	.tool:active .icon.fa_big {
 		padding-top: 2px;
-	}
-	img.icon {
-		height: 26px;
-		image-rendering: pixelated;
 	}
 
 	.tool.enabled {
@@ -374,6 +354,11 @@
 
 	.tool:hover {
 		color: var(--color-light);
+	}
+	.tool.head_right {
+		margin-top: -29px;
+		height: 24px;
+		float: right;
 	}
 	.tool.right_tool {
 		position: relative;
@@ -591,7 +576,8 @@
 		height: 2px;
 		width: 100%;
 		padding: 0;
-		background-color: var(--color-menu_separator);
+		background-color: var(--color-bright_ui_text);
+		opacity: 0.28;
 	}
 	.contextMenu li.highlighted {
 		animation: menu_item_highlight 1s infinite ease-in-out;
@@ -640,7 +626,7 @@
 	body.theme_borders .contextMenu,
 	body.theme_borders dialog,
 	body.theme_borders .dialog_close_button,
-	body.theme_borders #start_screen > content,
+	body.theme_borders #start_screen content,
 	body.theme_borders #quick_message_box,
 	body.theme_borders action_selector > #action_selector_list
 	{

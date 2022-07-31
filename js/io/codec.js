@@ -19,7 +19,6 @@ class Codec {
 		Merge.string(this, data, 'extension');
 		Merge.boolean(this, data, 'remember');
 		Merge.boolean(this, data, 'multiple_per_file');
-		this.format = data.format;
 		this.load_filter = data.load_filter;
 		this.export_action = data.export_action;
 	}

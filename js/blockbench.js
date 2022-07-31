@@ -145,7 +145,7 @@ function updateSelection(options = {}) {
 				document.querySelectorAll('.selection_only#panel_element').forEach(node => node.style.setProperty('visibility', 'visible'));
 			}
 		}
-		if (Group.selected || (Outliner.selected[0] && Outliner.selected[0].constructor.animator)) {
+		if (Group.selected || NullObject.selected[0]) {
 			document.querySelectorAll('.selection_only#panel_bone').forEach(node => node.style.setProperty('visibility', 'visible'));
 		}
 		if (Modes.paint) {
@@ -219,12 +219,11 @@ function selectAll() {
 		updateSelection();
 
 	} else if (Modes.edit || Modes.paint) {
-		let selectable_elements = Outliner.elements.filter(element => !element.locked);
-		if (Outliner.selected.length < selectable_elements.length) {
+		if (Outliner.selected.length < Outliner.elements.length) {
 			if (Outliner.root.length == 1 && !Outliner.root[0].locked) {
 				Outliner.root[0].select();
 			} else {
-				selectable_elements.forEach(obj => {
+				Outliner.elements.forEach(obj => {
 					obj.selectLow()
 				})
 				TickUpdates.selection = true;
@@ -247,13 +246,11 @@ function unselectAll() {
 	TickUpdates.selection = true;
 }
 //Backup
-const AutoBackupModels = {};
 setInterval(function() {
 	if (Project && (Outliner.root.length || Project.textures.length)) {
 		try {
-			var model = Codecs.project.compile({compressed: false, backup: true, raw: true});
-			AutoBackupModels[Project.uuid] = model;
-			localStorage.setItem('backup_model', JSON.stringify(AutoBackupModels));
+			var model = Codecs.project.compile({compressed: false, minify: true, backup: true});
+			localStorage.setItem('backup_model', model)
 		} catch (err) {
 			console.error('Unable to create backup. ', err)
 		}

@@ -13,7 +13,6 @@ class Texture {
 		this.show_icon = true
 		this.error = 0;
 		this.visible = true;
-		this.display_canvas = false;
 		//Data
 		this.img = 0;
 		this.width = 0;
@@ -48,8 +47,6 @@ class Texture {
 		}
 
 		//Setup Img/Mat
-		this.canvas = document.createElement('canvas');
-		this.canvas.width = this.canvas.height = 16;
 		var img = this.img = new Image()
 		img.src = 'assets/missing.png'
 
@@ -63,7 +60,6 @@ class Texture {
 			attribute float highlight;
 
 			uniform bool SHADE;
-			uniform int LIGHTSIDE;
 
 			varying vec2 vUv;
 			varying float light;
@@ -79,30 +75,6 @@ class Texture {
 				if (SHADE) {
 
 					vec3 N = normalize( vec3( modelMatrix * vec4(normal, 0.0) ) );
-
-					if (LIGHTSIDE == 1) {
-						float temp = N.y;
-						N.y = N.z * -1.0;
-						N.z = temp;
-					}
-					if (LIGHTSIDE == 2) {
-						float temp = N.y;
-						N.y = N.x;
-						N.x = temp;
-					}
-					if (LIGHTSIDE == 3) {
-						N.y = N.y * -1.0;
-					}
-					if (LIGHTSIDE == 4) {
-						float temp = N.y;
-						N.y = N.z;
-						N.z = temp;
-					}
-					if (LIGHTSIDE == 5) {
-						float temp = N.y;
-						N.y = N.x * -1.0;
-						N.x = temp;
-					}
 
 					float yLight = (1.0+N.y) * 0.5;
 					light = yLight * (1.0-AMBIENT) + N.x*N.x * XFAC + N.z*N.z * ZFAC + AMBIENT;
@@ -134,7 +106,7 @@ class Texture {
 
 			uniform bool SHADE;
 			uniform bool EMISSIVE;
-			uniform vec3 LIGHTCOLOR;
+			uniform float BRIGHTNESS;
 
 			varying vec2 vUv;
 			varying float light;
@@ -148,17 +120,12 @@ class Texture {
 
 				if (EMISSIVE == false) {
 
-					gl_FragColor = vec4(lift + color.rgb * light, color.a);
-					gl_FragColor.r = gl_FragColor.r * LIGHTCOLOR.r;
-					gl_FragColor.g = gl_FragColor.g * LIGHTCOLOR.g;
-					gl_FragColor.b = gl_FragColor.b * LIGHTCOLOR.b;
+					gl_FragColor = vec4(lift + color.rgb * light * BRIGHTNESS, color.a);
 
 				} else {
 
-					float light_r = (light * LIGHTCOLOR.r) + (1.0 - light * LIGHTCOLOR.r) * (1.0 - color.a);
-					float light_g = (light * LIGHTCOLOR.g) + (1.0 - light * LIGHTCOLOR.g) * (1.0 - color.a);
-					float light_b = (light * LIGHTCOLOR.b) + (1.0 - light * LIGHTCOLOR.b) * (1.0 - color.a);
-					gl_FragColor = vec4(lift + color.r * light_r, lift + color.g * light_g, lift + color.b * light_b, 1.0);
+					float light2 = (light * BRIGHTNESS) + (1.0 - light * BRIGHTNESS) * (1.0 - color.a);
+					gl_FragColor = vec4(lift + color.rgb * light2, 1.0);
 
 				}
 
@@ -171,8 +138,7 @@ class Texture {
 			uniforms: {
 				map: {type: 't', value: tex},
 				SHADE: {type: 'bool', value: settings.shading.value},
-				LIGHTCOLOR: {type: 'vec3', value: new THREE.Color().copy(Canvas.global_light_color).multiplyScalar(settings.brightness.value / 50)},
-				LIGHTSIDE: {type: 'int', value: Canvas.global_light_side},
+				BRIGHTNESS: {type: 'bool', value: settings.brightness.value / 50},
 				EMISSIVE: {type: 'bool', value: this.render_mode == 'emissive'}
 			},
 			vertexShader: vertShader,
@@ -284,9 +250,6 @@ class Texture {
 	}
 	getUndoCopy(bitmap) {
 		var copy = {}
-		if (this.display_canvas && bitmap) {
-			this.updateSource(this.canvas.toDataURL());
-		}
 		for (var key in Texture.properties) {
 			Texture.properties[key].copy(this, copy)
 		}
@@ -345,8 +308,6 @@ class Texture {
 			this.namespace = spaces[0]
 			link = spaces[1]
 			path_array[path_array.length-1] = this.namespace
-		} else {
-			path_array[path_array.length-1] = 'minecraft'
 		}
 
 		if (path_array.includes('cit')) {
@@ -411,23 +372,7 @@ class Texture {
 		} else {
 			this.source = path.replace(/#/g, '%23') + '?' + tex_version
 		}
-		if (Format.texture_folder) {
-			this.generateFolder(path);
-			if ((this.folder + this.name).match(/[^a-z0-9._/\\-]/) && !Dialog.open && settings.dialog_invalid_characters.value) {
-				Blockbench.showMessageBox({
-					translateKey: 'invalid_characters',
-					message: tl('message.invalid_characters.message', ['a-z0-9._-']),
-					icon: 'folder_open',
-					buttons: [tl('dialog.ok'), tl('dialog.dontshowagain')],
-					confirm: 0,
-					cancel: 0
-				}, result => {
-					if (result === 1) {
-						settings.dialog_invalid_characters.set(false);
-					}
-				})
-			}
-		}
+		if (Format.texture_folder) this.generateFolder(path)
 		this.startWatcher()
 		Painter.current = {}
 		
@@ -458,7 +403,7 @@ class Texture {
 	}
 	fromDefaultPack() {
 		if (isApp && settings.default_path && settings.default_path.value) {
-			if (Project.BedrockEntityManager) {
+			if (Format.single_texture) {
 				var path = Project.BedrockEntityManager.findEntityTexture(Project.geometry_name, 'raw')
 				if (path) {
 					this.isDefault = true;
@@ -498,7 +443,6 @@ class Texture {
 		if (!dataUrl) dataUrl = this.source;
 		this.source = dataUrl;
 		this.img.src = dataUrl;
-		this.display_canvas = false;
 		this.updateMaterial();
 		if (open_dialog == 'UVEditor') {
 			for (var key in UVEditor.editors) {
@@ -513,7 +457,6 @@ class Texture {
 	updateMaterial() {
 		let mat = this.getMaterial();
 		mat.name = this.name;
-		mat.map.image = this.img;
 		mat.map.name = this.name;
 		mat.map.image.src = this.source;
 		mat.map.needsUpdate = true;
@@ -641,7 +584,7 @@ class Texture {
 			})
 			this.folder = tex_arr.slice(index).join('/');
 
-			if (Format.texture_folder && isApp && settings.dialog_loose_texture.value) {
+			if (Format.id === 'java_block' && isApp && settings.dialog_loose_texture.value) {
 				Blockbench.showMessageBox({
 					translateKey: 'loose_texture',
 					icon: 'folder_open',
@@ -758,10 +701,10 @@ class Texture {
 	}
 	//Use
 	enableParticle() {
-		if (Format.select_texture_for_particles) {
-			Texture.all.forEach(function(s) {
-				s.particle = false;
-			})
+		Texture.all.forEach(function(s) {
+			s.particle = false;
+		})
+		if (Format.id == 'java_block') {
 			this.particle = true
 		}
 		return this;
@@ -864,9 +807,9 @@ class Texture {
 			],
 			form: {
 				name: 		{label: 'generic.name', value: scope.name},
-				variable: 	{label: 'dialog.texture.variable', value: scope.id, condition: {features: ['texture_folder']}},
+				variable: 	{label: 'dialog.texture.variable', value: scope.id, condition: () => Format.id === 'java_block'},
 				folder: 	{label: 'dialog.texture.folder', value: scope.folder, condition: () => Format.texture_folder},
-				namespace: 	{label: 'dialog.texture.namespace', value: scope.namespace, condition: {features: ['texture_folder']}},
+				namespace: 	{label: 'dialog.texture.namespace', value: scope.namespace, condition: () => Format.id === 'java_block'},
 			},
 			onConfirm: function(results) {
 
@@ -1078,11 +1021,12 @@ class Texture {
 			}
 			tex_version++;
 			if (!as && this.path && fs.existsSync(this.path)) {
-				fs.writeFileSync(this.path, image);
-				scope.fromPath(scope.path)
+				fs.writeFile(this.path, image, function (err) {
+					scope.fromPath(scope.path)
+				})
 			} else {
 				var find_path;
-				if (Format.bone_rig && Project.geometry_name && Project.BedrockEntityManager) {
+				if (Format.bone_rig && Project.geometry_name) {
 					find_path = Project.BedrockEntityManager.findEntityTexture(Project.geometry_name, true)
 				}
 				if (!find_path && Project.export_path) {
@@ -1239,7 +1183,7 @@ class Texture {
 			{
 				icon: 'bubble_chart',
 				name: 'menu.texture.particle',
-				condition: {features: ['select_texture_for_particles']},
+				condition: function() {return Format.id == 'java_block'},
 				click: function(texture) {
 					if (texture.particle) {
 						texture.particle = false
@@ -1528,46 +1472,29 @@ Clipbench.setTexture = function(texture) {
 	//Sets the raw image of the texture
 	if (!isApp) return;
 
-	Clipbench.texture = texture.getUndoCopy();
-	delete Clipbench.texture.path;
-	Clipbench.texture.mode = 'bitmap';
-	Clipbench.texture.saved = false;
-	Clipbench.texture.source = 'data:image/png;base64,'+texture.getBase64();
-
-	if (isApp) {
-		if (texture.mode === 'bitmap') {
-			var img = nativeImage.createFromDataURL(texture.source);
-		} else {
-			var img = nativeImage.createFromPath(texture.source.split('?')[0]);
-		}
-		clipboard.writeImage(img);
+	if (texture.mode === 'bitmap') {
+		var img = nativeImage.createFromDataURL(texture.source)
+	} else {
+		var img = nativeImage.createFromPath(texture.source.split('?')[0])
 	}
+	clipboard.writeImage(img)
 }
 Clipbench.pasteTextures = function() {
-	function loadFromDataUrl(dataUrl) {
-		if (!dataUrl || dataUrl.length < 32) return;
-		var texture = new Texture({name: 'pasted', folder: 'block' }).fromDataURL(dataUrl).fillParticle().add(true);
+	function loadImage(dataUrl) {
+		var texture = new Texture({name: 'pasted', folder: 'block' }).fromDataURL(dataUrl).fillParticle().add(true)
 		setTimeout(function() {
-			texture.openMenu();
+			texture.openMenu()
 		}, 40)
 	}
-
-	if (Clipbench.texture) {
-		var texture = new Texture(Clipbench.texture).fillParticle().load().add(true);
-		setTimeout(function() {
-			texture.openMenu();
-		}, 40)
-		Clipbench.texture = null;
-
-	} else if (isApp) {
+	if (isApp) {
 		var image = clipboard.readImage().toDataURL();
-		loadFromDataUrl(image);
+		loadImage(image);
 	} else {
 		navigator.clipboard.read().then(content => {
 			if (content && content[0] && content[0].types.includes('image/png')) {
 				content[0].getType('image/png').then(blob => {
 					let url = URL.createObjectURL(blob);
-					loadFromDataUrl(url);
+					loadImage(url);
 				})
 			}
 		}).catch(() => {})
@@ -1931,6 +1858,7 @@ Interface.definePanels(function() {
 			'paste',
 			'import_texture',
 			'create_texture',
+			'reload_textures',
 			'change_textures_folder',
 			'save_textures'
 		])

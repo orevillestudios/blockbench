@@ -62,6 +62,7 @@ const codec = new Codec('skin_model', {
 	},
 	parse(data, resolution, texture_path, pose = true, layer_template) {
 		this.dispatchEvent('parse', {model: data});
+		Project.geometry_name = data.name;
 		Project.texture_width = data.texturewidth || 64;
 		Project.texture_height = data.textureheight || 64;
 
@@ -153,22 +154,9 @@ const codec = new Codec('skin_model', {
 codec.export = null;
 
 
-const format = new ModelFormat('skin', {
+const format = new ModelFormat({
+	id: 'skin',
 	icon: 'icon-player',
-	category: 'minecraft',
-	target: ['Minecraft: Java Edition', 'Minecraft: Bedrock Edition'],
-	format_page: {
-		content: [
-			{type: 'h3', text: tl('mode.start.format.informations')},
-			{text: `* ${tl('format.skin.info.skin')}
-					* ${tl('format.skin.info.model')}`.replace(/\t+/g, '')
-			},
-			{type: 'h3', text: tl('mode.start.format.resources')},
-			{text: `* [Skin Design Tutorial](https://youtu.be/xC81Q3HGraE)`}
-		]
-	},
-	can_convert_to: false,
-	model_identifier: false,
 	bone_rig: true,
 	box_uv: true,
 	centered_grid: true,
@@ -234,6 +222,7 @@ const skin_dialog = new Dialog({
 		model: {
 			label: 'dialog.skin.model',
 			type: 'select',
+			default: Format.id,
 			options: model_options
 		},
 		variant: {
@@ -254,10 +243,6 @@ const skin_dialog = new Dialog({
 			64: '64x',
 			128: '128x',
 		}},
-		resolution_warning: {
-			type: 'info', text: 'dialog.skin.high_res_texture',
-			condition: (form) => form.resolution != 16 && (form.model == 'steve' || form.model == 'alex')
-		},
 		texture: {
 			label: 'dialog.skin.texture',
 			type: 'file',

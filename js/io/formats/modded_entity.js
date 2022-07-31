@@ -14,6 +14,7 @@ const Templates = {
 	'1.12': {
 		name: 'Forge 1.7 - 1.13',
 		remember: true,
+		flip_y: true,
 		integer_size: true,
 		file:
 		   `// Made with Blockbench %(bb_version)
@@ -56,6 +57,7 @@ const Templates = {
 	'1.14': {
 		name: 'Forge 1.14 (MCP)',
 		remember: true,
+		flip_y: true,
 		integer_size: true,
 		file: 
 		   `// Made with Blockbench %(bb_version)
@@ -98,6 +100,7 @@ const Templates = {
 	'1.14_mojmaps': {
 		name: 'Forge 1.14 (Mojmaps)',
 		remember: false,
+		flip_y: true,
 		integer_size: true,
 		file:
 			`// Made with Blockbench %(bb_version)
@@ -140,6 +143,7 @@ const Templates = {
 	'1.15': {
 		name: 'Forge 1.15 - 1.16 (MCP)',
 		remember: true,
+		flip_y: true,
 		integer_size: false,
 		file: 
 		   `// Made with Blockbench %(bb_version)
@@ -187,6 +191,7 @@ const Templates = {
 	'1.15_mojmaps': {
 		name: 'Forge 1.15 - 1.16 (Mojmaps)',
 		remember: false,
+		flip_y: true,
 		integer_size: false,
 		file:
 			`// Made with Blockbench %(bb_version)
@@ -235,6 +240,7 @@ const Templates = {
 		name: 'Forge 1.17 - 1.18 (Mojmaps)',
 		remember: false,
 		use_layer_definition: true,
+		flip_y: true,
 		integer_size: false,
 		file:
 			`// Made with Blockbench %(bb_version)
@@ -417,7 +423,7 @@ var codec = new Codec('modded_entity', {
 					origin.V3_subtract(group.parent.origin)
 				}
 				origin[0] *= -1;
-				if (Project.modded_entity_flip_y) {
+				if (Templates.get('flip_y')) {
 					origin[1] *= -1;
 					if (group.parent instanceof Group === false) {
 						origin[1] += 24
@@ -451,7 +457,7 @@ var codec = new Codec('modded_entity', {
 								.replace(/{\?\(has_mirror\)(.+?)}/g, cube.mirror_uv == true ? '$1' : '')
 								.replace(R('mirror'), cube.mirror_uv)
 
-							if (Project.modded_entity_flip_y) {
+							if (Templates.get('flip_y')) {
 								c_snippet = c_snippet
 									.replace(R('x'), F(group.origin[0] - cube.to[0]) )
 									.replace(R('y'), F(-cube.from[1] - cube.size(1) + group.origin[1]) )
@@ -870,16 +876,6 @@ Object.defineProperty(codec, 'remember', {
 var format = new ModelFormat({
 	id: 'modded_entity',
 	icon: 'icon-format_java',
-	category: 'minecraft',
-	target: 'Minecraft: Java Edition',
-	format_page: {
-		content: [
-			{type: 'h3', text: tl('mode.start.format.informations')},
-			{text: `* ${tl('format.modded_entity.info.integer_size')}
-					* ${tl('format.modded_entity.info.format')}`.replace(/\t+/g, '')
-			}
-		]
-	},
 	codec,
 	box_uv: true,
 	single_texture: true,

@@ -14,9 +14,6 @@ var codec = new Codec('optifine_entity', {
 	compile(options) {
 		if (options === undefined) options = {}
 		var entitymodel = {}
-		if (settings.credit.value) {
-			entitymodel.credit = settings.credit.value
-		}
 		var geo_code = 'geometry.'+Project.geometry_name
 		if (Texture.getDefault()) {
 			let tex = Texture.getDefault();
@@ -34,10 +31,10 @@ var codec = new Codec('optifine_entity', {
 				part: g.name,
 				id: g.name,
 				invertAxis: 'xy',
-				mirrorTexture: undefined,
 				translate: g.origin.slice()
 			}
-			bone.translate.V3_multiply(-1);
+			bone.translate[1] *= -1
+			bone.translate[2] *= -1
 
 			if (!g.rotation.allEqual(0)) {
 				bone.rotate = g.rotation.slice()
@@ -70,9 +67,6 @@ var codec = new Codec('optifine_entity', {
 				if (group.texture_size && !group.texture_size.allEqual(0)) {
 					p_model.textureSize = group.texture_size;
 				}
-
-				let child_cubes = group.children.filter(obj => obj.export && obj.type === 'cube')
-				let has_different_mirrored_children = !!child_cubes.find(obj => obj.mirror_uv !== child_cubes[0].mirror_uv);
 
 				group.children.forEach(obj => {
 					if (!obj.export) return;
@@ -112,22 +106,19 @@ var codec = new Codec('optifine_entity', {
 							box.sizeAdd = obj.inflate
 						}
 
-						if (obj.mirror_uv !== group.mirror_uv && has_different_mirrored_children) {
+						if (obj.mirror_uv !== group.mirror_uv) {
 							if (!mirror_sub) {
 								mirror_sub = { 
 									invertAxis: 'xy',
-									mirrorTexture: 'u',
+									mirrorTexture: 'u',//xxx
 									boxes: []
 								}
 								if (!p_model.submodels) p_model.submodels = [];
 								p_model.submodels.splice(0, 0, mirror_sub)
 							}
-							mirror_sub.boxes.push(box);
+							mirror_sub.boxes.push(box)
 						} else {
-							if (!p_model.boxes) p_model.boxes = [];
-							if (obj.mirror_uv !== group.mirror_uv) {
-								p_model.mirrorTexture = obj.mirror_uv ? 'u' : undefined;
-							}
+							if (!p_model.boxes) p_model.boxes = []
 							p_model.boxes.push(box)
 						}
 					} else if (obj.type === 'group') {
@@ -135,11 +126,10 @@ var codec = new Codec('optifine_entity', {
 						var bone = {
 							id: obj.name,
 							invertAxis: 'xy',
-							mirrorTexture: undefined,
 							translate: obj.origin.slice()
 						}
 						if (obj.mirror_uv) {
-							bone.mirrorTexture = 'u';
+							bone.mirrorTexture = 'u'
 						}
 						if (!obj.rotation.allEqual(0)) {
 							bone.rotate = obj.rotation.slice()
@@ -175,19 +165,6 @@ var codec = new Codec('optifine_entity', {
 	},
 	parse(model, path) {
 		this.dispatchEvent('parse', {model});
-
-		function importTexture(string) {
-			if (typeof string !== 'string') return;
-
-			let texture_path = string.replace(/[\\/]/g, osfs);
-			if (texture_path.match(/^textures/)) {
-				texture_path = path.replace(/[\\/]optifine[\\/].+$/i, osfs+texture_path);
-			} else {
-				texture_path = path.replace(/[\\/][^\\/]+$/, osfs+texture_path);
-			}
-			return new Texture().fromPath(texture_path).add(false);
-		}
-
 		if (model.textureSize) {
 			Project.texture_width = parseInt(model.textureSize[0])||16;
 			Project.texture_height = parseInt(model.textureSize[1])||16;
@@ -210,8 +187,8 @@ var codec = new Codec('optifine_entity', {
 					texture: b.texture,
 					texture_size: b.textureSize,
 				})
-				group.origin.V3_multiply(-1);
-				importTexture(b.texture);
+				group.origin[1] *= -1;
+				group.origin[2] *= -1;
 
 				function readContent(submodel, p_group, depth) {
 
@@ -281,7 +258,6 @@ var codec = new Codec('optifine_entity', {
 								texture: subsub.texture,
 								texture_size: subsub.textureSize,
 							})
-							importTexture(subsub.texture);
 							subcount++;
 							group.addTo(p_group).init()
 							readContent(subsub, group, depth+1)
@@ -293,7 +269,15 @@ var codec = new Codec('optifine_entity', {
 				readContent(b, group, 0)
 			})
 		}
-		importTexture(model.texture);
+		if (typeof model.texture == 'string') {
+			let texture_path = model.texture.replace(/[\\/]/g, osfs);
+			if (texture_path.match(/^textures/)) {
+				texture_path = path.replace(/[\\/]optifine[\\/][\\\w .-]+$/i, '\\'+texture_path);
+			} else {
+				texture_path = path.replace(/\\[\w .-]+$/, '\\'+texture_path);
+			}
+			new Texture().fromPath(texture_path).add(false);
+		}
 		this.dispatchEvent('parsed', {model});
 		Canvas.updateAllBones();
 	}
@@ -304,19 +288,6 @@ var format = new ModelFormat({
 	id: 'optifine_entity',
 	extension: 'jem',
 	icon: 'icon-format_optifine',
-	category: 'minecraft',
-	target: 'Minecraft: Java Edition with OptiFine',
-	format_page: {
-		content: [
-			{type: 'h3', text: tl('mode.start.format.informations')},
-			{text: `* ${tl('format.optifine_entity.info.optifine_required')}
-					* ${tl('format.optifine_entity.info.pivots')}`.replace(/\t+/g, '')
-			},
-			{type: 'h3', text: tl('mode.start.format.resources')},
-			{text: `* [OptiFine Modeling and Animation Tutorial](https://youtu.be/arj2eim42KI)`}
-		]
-	},
-	model_identifier: false,
 	box_uv: true,
 	optional_box_uv: true,
 	single_texture: true,

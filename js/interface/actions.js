@@ -234,11 +234,16 @@ class Action extends BarItem {
 		this.nodes = [this.node]
 		this.menus = [];
 		
-		this.menu_node = Interface.createElement('li', {title: this.description || '', menu_item: id}, [
-			this.icon_node.cloneNode(true),
-			Interface.createElement('span', {}, this.name),
-			Interface.createElement('label', {class: 'keybinding_label'}, this.keybind || '')
-		]);
+		this.menu_node = document.createElement('li');
+		this.menu_node.title = this.description || '';
+		this.menu_node.append(this.icon_node.cloneNode(true));
+		let span = document.createElement('span');
+		span.innerText = this.name;
+		this.menu_node.append(span);
+		let label = document.createElement('label');
+		label.classList.add('keybinding_label')
+		label.innerText = this.keybind || '';
+		this.menu_node.append(label);
 
 		this.addLabel(data.label)
 		this.updateKeybindingLabel()
@@ -1005,8 +1010,8 @@ class BarSelect extends Widget {
 		}
 		return false;
 	}
-	change(value, event) {
-		this.set(value);
+	change(event) {
+		this.set( $(event.target).find('option:selected').prop('id') );
 		if (this.onChange) {
 			this.onChange(this, event);
 		}
@@ -1709,10 +1714,8 @@ const BARS = {
 						if (Animation.selected && Prop.active_panel == 'animations') {
 							var copy = Animation.selected.getUndoCopy();
 							var animation = new Animation(copy);
-							Property.resetUniqueValues(Animation, animation);
 							animation.createUniqueName();
 							Animator.animations.splice(Animator.animations.indexOf(Animation.selected)+1, 0, animation)
-							animation.saved = false;
 							animation.add(true).select();
 						}
 					} else if (Group.selected && (Group.selected.matchesSelection() || selected.length === 0)) {
@@ -1903,6 +1906,7 @@ const BARS = {
 				'add_mesh',
 				'add_group',
 				'outliner_toggle',
+				'toggle_material_groups',
 				'toggle_skin_layer',
 				'explode_skin_model',
 				'+',
@@ -1919,13 +1923,9 @@ const BARS = {
 			children: [
 				'import_texture',
 				'create_texture',
-				'append_to_template',
+				'reload_textures'
 			]
 		})
-		Blockbench.onUpdateTo('4.3.0-beta.0', () => {
-			Toolbars.texturelist.add(BarItems.append_to_template);
-		})
-
 		Toolbars.tools = new Toolbar({
 			id: 'tools',
 			children: [
@@ -2003,12 +2003,8 @@ const BARS = {
 				'export_palette',
 				'generate_palette',
 				'sort_palette',
-				'save_palette',
 				'load_palette',
 			]
-		})
-		Blockbench.onUpdateTo('4.3.0-beta.0', () => {
-			Toolbars.palette.add(BarItems.save_palette, -1);
 		})
 		Toolbars.color_picker = new Toolbar({
 			id: 'color_picker',

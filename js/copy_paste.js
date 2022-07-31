@@ -251,7 +251,6 @@ const Clipbench = {
 			for (let old_fkey in this.faces) {
 				let old_face = this.faces[old_fkey];
 				let new_face = new MeshFace(mesh, old_face);
-				Property.resetUniqueValues(MeshFace, new_face);
 				let new_face_vertices = new_face.vertices.map(old_vkey => {
 					let new_vkey = new_vertices[old_vertices.indexOf(old_vkey)];
 					new_face.uv[new_vkey] = new_face.uv[old_vkey];
@@ -298,7 +297,6 @@ const Clipbench = {
 				if (obj.children) {
 					var copy = new Group(obj).addTo(parent).init()
 					copy.createUniqueName();
-					Property.resetUniqueValues(Group, copy);
 
 					if (obj.children && obj.children.length) {
 						obj.children.forEach((child) => {
@@ -306,10 +304,9 @@ const Clipbench = {
 						})
 					}
 				} else if (OutlinerElement.isTypePermitted(obj.type)) {
-					var copy = OutlinerElement.fromSave(obj).addTo(parent).selectLow();
-					copy.createUniqueName();
-					Property.resetUniqueValues(copy.constructor, copy);
-					copy.preview_controller.updateTransform(copy);
+					var el = OutlinerElement.fromSave(obj).addTo(parent).selectLow();
+					el.createUniqueName();
+					el.preview_controller.updateTransform(el);
 				}
 			}
 			iterate(Clipbench.group, target)
@@ -319,10 +316,9 @@ const Clipbench = {
 			let elements = [];
 			Clipbench.elements.forEach(function(obj) {
 				if (!OutlinerElement.isTypePermitted(obj.type)) return;
-				var copy = OutlinerElement.fromSave(obj).addTo(target).selectLow();
-				copy.createUniqueName();
-				Property.resetUniqueValues(copy.constructor, copy);
-				elements.push(copy);
+				var el = OutlinerElement.fromSave(obj).addTo(target).selectLow();
+				el.createUniqueName();
+				elements.push(el);
 			})
 			Canvas.updateView({elements});
 		}
