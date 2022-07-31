@@ -1349,12 +1349,16 @@ const Animator = {
 		if (keys.length == 0) {
 			Blockbench.showQuickMessage('message.no_animation_to_import');
 
-		} else if (keys.length == 1) {
+		} else /**if (keys.length == 1) {
 			Undo.initEdit({animations: []})
 			let new_animations = Animator.loadFile(file, keys);
 			Undo.finishEdit('Import animations', {animations: new_animations})
 
-		} else {
+		} else */{
+			Undo.initEdit({animations: []})
+				let new_animations = Animator.loadFile(file, keys);
+				Undo.finishEdit('Import animations', {animations: new_animations})
+		/*{
 			return new Promise(resolve => {
 				let dialog = new Dialog({
 					id: 'animation_import',
@@ -1387,7 +1391,7 @@ const Animator = {
 					}
 				}
 				dialog.show();
-			});
+			});*/
 		}
 	},
 	exportAnimationFile(path) {

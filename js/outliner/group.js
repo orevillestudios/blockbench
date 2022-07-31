@@ -18,6 +18,7 @@ class Group extends OutlinerNode {
 		this.autouv = 0;
 		this.parent = 'root';
 		this.isOpen = false;
+		this.materialIcon = null;
 
 		if (typeof data === 'object') {
 			this.extend(data)

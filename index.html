@@ -20,6 +20,7 @@
 	<link rel="stylesheet" href="css/start_screen.css">
 	<link rel="stylesheet" href="css/panels.css">
 	<link rel="stylesheet" href="css/dialogs.css">
+	<link rel="stylesheet" href="css/colors.css">
 	<style type="text/css" id="theme_css"></style>
 </head>
 <body spellcheck="false">
@@ -52,6 +53,7 @@
 		<button onclick="isApp ? Blockbench.reload() : window.location.reload(true)" class="large" style="margin-right: auto; margin-left: auto;">Reload</button>
 		<button onclick="window.close()" class="large" style="margin-right: auto; margin-left: auto;">Quit</button>
 	</div>
+		<script src="js/materials.js"></script>
 		<script src="lib/vue.min.js"></script>
 		<script src="lib/vue_sortable.js"></script>
 		<script src="lib/jquery.js"></script>
@@ -468,5 +470,6 @@
 			document.getElementById('loading_error_message').innerHTML = 'No loading errors...'
 		}
 	</script>
+	<script src="orevillestudios/vscode_hook.js"></script>
 </body>
 </html>

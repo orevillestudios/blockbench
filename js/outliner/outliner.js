@@ -360,6 +360,19 @@ class OutlinerElement extends OutlinerNode {
 		selected.remove(this);
 		elements.remove(this);
 		this.constructor.selected.remove(this);
+
+		// Remove Empty Material Group 
+		if (this.hasOwnProperty('parent') && this.title == 'Cube' && this.parent.title == 'Group' && this.parent.hasOwnProperty('children')) {
+			if (this.parent.children.length === 0) {
+				getBoneMaterials().map((mat) => {
+					if (this.parent.name.includes(mat.value) && mat.value.length != 0) {
+						this.parent.remove();
+						return this;
+					}        
+				})
+			}
+		}
+
 		return this;
 	}
 	showContextMenu(event) {
@@ -958,6 +971,22 @@ BARS.defineActions(function() {
 			StateMemory.save('advanced_outliner_toggles');
 		}
 	})
+	new Action('toggle_material_groups', {
+		icon: 'fa-folder-open',
+		category: 'edit',
+		keybind: new Keybind({key: 'm', ctrl: true}),
+		click: function () {
+			if (isMatGroupVisible === undefined || isMatGroupVisible === false) {
+				isMatGroupVisible = true;
+			} else {
+				isMatGroupVisible = false;
+			}
+			// THIS IS SUCH A HACK ;_; (works tho)
+			Interface.Panels.outliner.inside_vue.$children.map((element) => {
+				element.forceRerender();
+			});
+		}
+	})
 	new BarText('cube_counter', {
 		right: true,
 		click: function() {
@@ -1237,8 +1266,11 @@ Interface.definePanels(function() {
 
 	var VueTreeItem = Vue.extend({
 		template: 
-		'<li class="outliner_node" v-bind:class="{ parent_li: node.children && node.children.length > 0}" v-bind:id="node.uuid">' +
+		'<li :key="updateMaterial" class="outliner_node" v-bind:class="{ parent_li: node.children && node.children.length > 0}" v-bind:id="node.uuid" >' +
+			// Can hide group from here!
 			`<div
+				:key="updateMaterial"
+				v-if="material_directory == false"
 				class="outliner_object"
 				v-bind:class="{ cube: node.type === 'cube', group: node.type === 'group', selected: node.selected }"
 				v-bind:style="{'padding-left': indentation + 'px'}"
@@ -1247,19 +1279,26 @@ Interface.definePanels(function() {
 				@touchstart="node.select($event)" :title="node.title"
 				@dblclick.stop.self="!node.locked && renameOutliner()"
 			>` +
-				//Opener
-				
-				`<i v-if="node.children && node.children.length > 0 && (!options.hidden_types.length || node.children.some(node => !options.hidden_types.includes(node.type)))" v-on:click.stop="node.isOpen = !node.isOpen" class="icon-open-state fa" :class='{"fa-angle-right": !node.isOpen, "fa-angle-down": node.isOpen}'></i>
-				<i v-else class="outliner_opener_placeholder"></i>
+				// Opener
+				`<i :key="updateMaterial" v-if="node.children && node.children.length > 0 && (!options.hidden_types.length || node.children.some(node => !options.hidden_types.includes(node.type)))" v-on:click.stop="node.isOpen = !node.isOpen" class="icon-open-state fa" :class='{"fa-angle-right": !node.isOpen, "fa-angle-down": node.isOpen}'></i>
+				<i v-else class="outliner_opener_placeholder"></i>` +
 
-				<i :class="node.icon.substring(0, 2) == 'fa' ? node.icon : 'material-icons'"
-					:style="(outliner_colors.value && node.color >= 0) && {color: markerColors[node.color % markerColors.length].pastel}"
+				// Material pipe icon
+				`<b :key="updateMaterial" v-if="!node.children"
+					:style="{'color': get_material_color, 'padding-left': '3px', 'padding-right': '3px'}"
+				> | </b>` +
+
+				// Cube or Folder icon
+				`<i 
+					:key="updateMaterial"
+					:class="node.icon.substring(0, 2) == 'fa' ? node.icon : 'material-icons'"
+					:style="(outliner_colors.value && node.color >= 0) && {color: markerColors[node.color].pastel}"
 					v-on:dblclick.stop="doubleClickIcon(node)"
-				>{{ node.icon.substring(0, 2) == 'fa' ? '' : node.icon }}</i>
-				<input type="text" class="cube_name tab_target" :class="{locked: node.locked}" v-model="node.name" disabled>` +
+				>{{ node.icon.substring(0, 2) == 'fa' ? '' : node.icon }}</i>` +
 
-
-				`<i v-for="btn in node.buttons"
+				// Main
+				'<input :key="updateMaterial" type="text" class="cube_name tab_target" :class="{locked: node.locked}" v-model="node.name" disabled>' +
+				`<i :key="updateMaterial" v-for="btn in node.buttons"
 					v-if="(!btn.advanced_option || options.show_advanced_toggles || (btn.id === 'locked' && node.isIconEnabled(btn)))"
 					class="outliner_toggle"
 					:class="getBtnClasses(btn, node)"
@@ -1267,9 +1306,10 @@ Interface.definePanels(function() {
 					:toggle="btn.id"
 					@click.stop
 				></i>` +
+
 			'</div>' +
-			//Other Entries
-			'<ul v-if="node.isOpen">' +
+			// Other Entries
+			'<ul :key="updateMaterial" v-if="node.isOpen">' +
 				'<vue-tree-item v-for="item in visible_children" :node="item" :options="options" :key="item.uuid"></vue-tree-item>' +
 				`<div class="outliner_line_guide" v-if="node.constructor.selected == node" v-bind:style="{left: indentation + 'px'}"></div>` +
 			'</ul>' +
@@ -1285,7 +1325,11 @@ Interface.definePanels(function() {
 		}},
 		computed: {
 			indentation() {
-				return this.node.getDepth ? (limitNumber(this.node.getDepth(), 0, (this.width-100) / 16) * 16) : 0;
+				if (this.node.material && isMatGroupVisible) {
+					return (this.node.getDepth) ? (limitNumber(this.node.getDepth() - 1, 0, (this.width-100) / 16) * 16) : 0;
+				} else {
+					return this.node.getDepth ? (limitNumber(this.node.getDepth(), 0, (this.width-100) / 16) * 16) : 0;
+				}
 			},
 			visible_children() {
 				if (!this.options.hidden_types.length) {
@@ -1293,7 +1337,33 @@ Interface.definePanels(function() {
 				} else {
 					return this.node.children.filter(node => !this.options.hidden_types.includes(node.type));
 				}
-			}
+			},
+			// Check if group is a material group
+			material_directory() {
+				materials = getBoneMaterials();
+				let materialFound = false
+				if (isMatGroupVisible) {
+					materials.map((material) => {
+						if (this.node.name.includes(material.value) && (material.value != "")) {
+							materialFound = true
+						}
+					})
+					return materialFound
+				} else {
+					return false
+				}
+			},
+			get_material_color() {
+				materials = getBoneMaterials();
+				let materialColor = "white"
+				materials.map((material) => {
+					if ((this.node.parent != 'root' && this.node.parent.name.includes(material.value) && (material.value != ""))) {
+						this.node.material = material.value;
+						materialColor = material.color;
+					}
+				})
+				return materialColor;
+			},
 		},
 		methods: {
 			nodeClass: function (node) {
@@ -1318,6 +1388,28 @@ Interface.definePanels(function() {
 					node.isOpen = !node.isOpen;
 				}
 			},
+
+			// Triggers vue element re-render
+			forceRerender() {
+				if (this.updateMaterial == undefined || this.updateMaterial == NaN) {
+					this.updateMaterial = 1;
+				} else {
+					this.updateMaterial += 1;
+				}
+
+				// Open all material groups
+				getAllGroups().map((child) => {
+					if (child.title == 'Group') {
+						getBoneMaterials().map((mat) => {
+							if (child.name.includes(mat.value) && mat.value.length != 0) {
+								if (child.isOpen == false) {
+									child.isOpen = true;
+								}
+							}        
+						})
+					}
+				});
+		},
 			renameOutliner
 		}
 	});
