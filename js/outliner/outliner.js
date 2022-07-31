@@ -1318,7 +1318,8 @@ Interface.definePanels(function() {
 			options: Object,
 			node: {
 				type: Object
-			}
+			},
+			updateMaterial: Number,
 		},
 		data() {return {
 			outliner_colors: settings.outliner_colors
