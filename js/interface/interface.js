@@ -56,13 +56,13 @@ class ResizeLine {
 		if (data.top !== undefined) {
 			jq.css('top', data.top+'px')
 		}
-		if (data.bottom !== undefined && (!data.horizontal || data.top === undefined)) {
+		if (data.bottom !== undefined && (!this.horizontal || data.top === undefined)) {
 			jq.css('bottom', data.bottom+'px')
 		}
 		if (data.left !== undefined) {
 			jq.css('left', data.left+'px')
 		}
-		if (data.right !== undefined && (data.horizontal || data.left === undefined)) {
+		if (data.right !== undefined && (this.horizontal || data.left === undefined)) {
 			jq.css('right', data.right+'px')
 		}
 	}
@@ -278,6 +278,7 @@ const Interface = {
 			}
 		})
 	},
+	CustomElements: {},
 	status_bar: {},
 	Panels: {},
 	toggleSidebar(side, status) {
@@ -617,6 +618,53 @@ Interface.createElement = (tag, attributes = {}, content) => {
 	if (content instanceof HTMLElement) el.append(content);
 	return el;
 }
+
+
+// Custom Elements
+Interface.CustomElements.ResizeLine = ResizeLine;
+Interface.CustomElements.SelectInput = function(id, data) {
+	function getNameFor(key) {
+		let val = data.options[key];
+		if (val) {
+			return tl(val.name || val);
+		} else {
+			return '';
+		}
+	}
+	let value = data.value || data.default || Object.keys(data.options)[0];
+	let select = Interface.createElement('bb-select', {id, class: 'half', value: value}, getNameFor(value));
+	function setKey(key) {
+		value = key;
+		select.setAttribute('value', key);
+		select.textContent = getNameFor(key);
+		if (typeof data.onChange == 'function') {
+			data.onChange(value);
+		}
+	}
+	select.addEventListener('click', function(event) {
+		if (Menu.closed_in_this_click == id) return this;
+		let items = [];
+		for (let key in data.options) {
+			let val = data.options[key];
+			if (val) {
+				items.push({
+					name: getNameFor(key),
+					icon: val.icon || ((value == key) ? 'far.fa-dot-circle' : 'far.fa-circle'),
+					condition: val.condition,
+					click: (e) => {
+						setKey(key);
+					}
+				})
+			}
+		}
+		let menu = new Menu(id, items, {searchable: items.length > 16});
+		menu.node.style['min-width'] = select.clientWidth+'px';
+		menu.open(select);
+	})
+	this.node = select;
+	this.set = setKey;
+}
+
 
 
 onVueSetup(function() {
