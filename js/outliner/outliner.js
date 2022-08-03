@@ -102,8 +102,6 @@ class OutlinerNode {
 			this.addTo('root')
 		}
 		return this;
-
-		
 	}
 	get preview_controller() {
 		return this.constructor.preview_controller;
@@ -228,7 +226,6 @@ class OutlinerNode {
 	remove() {
 		if (this.preview_controller) this.preview_controller.remove(this);
 		this.constructor.all.remove(this);
-
 		if (OutlinerNode.uuids[this.uuid] == this) delete OutlinerNode.uuids[this.uuid];
 		this.removeFromParent();
 	}
@@ -363,7 +360,7 @@ class OutlinerElement extends OutlinerNode {
 		selected.remove(this);
 		elements.remove(this);
 		this.constructor.selected.remove(this);
-		
+
 		// Remove Empty Material Group 
 		if (this.hasOwnProperty('parent') && this.title == 'Cube' && this.parent.title == 'Group' && this.parent.hasOwnProperty('children')) {
 			if (this.parent.children.length === 0) {
@@ -963,6 +960,17 @@ function toggleCubeProperty(key) {
 StateMemory.init('advanced_outliner_toggles', 'boolean')
 
 BARS.defineActions(function() {
+	new Toggle('outliner_toggle', {
+		icon: 'dns',
+		category: 'edit',
+		keybind: new Keybind({key: 115}),
+		default: StateMemory.advanced_outliner_toggles,
+		onChange: function (value) {
+			Outliner.vue.options.show_advanced_toggles = value;
+			StateMemory.advanced_outliner_toggles = value;
+			StateMemory.save('advanced_outliner_toggles');
+		}
+	})
 	new Action('toggle_material_groups', {
 		icon: 'fa-folder-open',
 		category: 'edit',
@@ -1255,6 +1263,7 @@ BARS.defineActions(function() {
 })
 
 Interface.definePanels(function() {
+
 	var VueTreeItem = Vue.extend({
 		template: 
 		'<li :key="updateMaterial" class="outliner_node" v-bind:class="{ parent_li: node.children && node.children.length > 0}" v-bind:id="node.uuid" >' +
@@ -1270,7 +1279,6 @@ Interface.definePanels(function() {
 				@touchstart="node.select($event)" :title="node.title"
 				@dblclick.stop.self="!node.locked && renameOutliner()"
 			>` +
-
 				// Opener
 				`<i :key="updateMaterial" v-if="node.children && node.children.length > 0 && (!options.hidden_types.length || node.children.some(node => !options.hidden_types.includes(node.type)))" v-on:click.stop="node.isOpen = !node.isOpen" class="icon-open-state fa" :class='{"fa-angle-right": !node.isOpen, "fa-angle-down": node.isOpen}'></i>
 				<i v-else class="outliner_opener_placeholder"></i>` +
@@ -1287,7 +1295,7 @@ Interface.definePanels(function() {
 					:style="(outliner_colors.value && node.color >= 0) && {color: markerColors[node.color].pastel}"
 					v-on:dblclick.stop="doubleClickIcon(node)"
 				>{{ node.icon.substring(0, 2) == 'fa' ? '' : node.icon }}</i>` +
-				
+
 				// Main
 				'<input :key="updateMaterial" type="text" class="cube_name tab_target" :class="{locked: node.locked}" v-model="node.name" disabled>' +
 				`<i :key="updateMaterial" v-for="btn in node.buttons"
@@ -1381,7 +1389,7 @@ Interface.definePanels(function() {
 					node.isOpen = !node.isOpen;
 				}
 			},
-		
+
 			// Triggers vue element re-render
 			forceRerender() {
 				if (this.updateMaterial == undefined || this.updateMaterial == NaN) {

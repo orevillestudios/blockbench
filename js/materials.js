@@ -4,7 +4,11 @@ let isMatGroupVisible = false;
 
 // Create menu for right-click on groups
 function createMaterialMenu() {    
-    var bone_materials = getBoneMaterials();
+    if (typeof getBoneMaterials === 'function') { 
+        bone_materials = getBoneMaterials();
+    } else {
+        bone_materials = []
+    }
     console.log(bone_materials);
     return {
         'name': 'Material Selection', 
