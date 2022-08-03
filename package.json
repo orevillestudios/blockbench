@@ -18,11 +18,6 @@
 		"appId": "blockbench",
 		"productName": "Blockbench",
 		"artifactName": "${productName}_${version}.${ext}",
-		"publish": [
-			{
-				"provider": "github"
-			}
-		],
 		"mac": {
 			"target": {
 				"target": "default",
@@ -102,7 +97,8 @@
 		"beta": "electron-builder --windows portable",
 		"pwa": "node ./scripts/generate_pwa.js",
 		"prepublish": "npm run bundle && npm run pwa",
-		"webapp": "git checkout gh-pages && git merge master && git push && git checkout master"
+		"webapp": "git checkout gh-pages && git merge master && git push && git checkout master",
+		"windows" : "electron-builder build --windows --publish=never"
 	},
 	"devDependencies": {
 		"blockbench-types": "^4.0.0",
