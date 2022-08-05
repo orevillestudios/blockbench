@@ -1349,10 +1349,8 @@ Interface.definePanels(function() {
 							materialFound = true
 						}
 					})
-					console.log(materialFound, ": ", this.node.name)
 					return materialFound
 				} else {
-					console.log(materialFound, ": ", this.node.name)
 					return false
 				}
 				return false

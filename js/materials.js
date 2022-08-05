@@ -36,7 +36,7 @@ function createMaterialMenu() {
 
                     // Remove material from cube
                     if (material.value == "") {
-                        // Move cuvbe to parent of current group
+                        // Move cube to parent of current group
                         Outliner.selected.map((obj) => {
                             if (obj.title == 'Cube') {
                                 obj.material = '';
@@ -61,13 +61,16 @@ function createMaterialMenu() {
                         // create new group to add materials to
                         let newMaterialGroup = new Group(material.value + materialDirectoryCount[material.value]).init();
 
-                        if (selectedGroup.children[0].material == null) {
-                            // Set group parent to group we just pushed to
-                            newMaterialGroup.addTo(selectedGroup);
-                            
-                        } else {
-                            // Set group to parent of group
-                            newMaterialGroup.addTo(selectedGroup.parent);
+                        if (selectedGroup != undefined) {
+                            console.log(selectedGroup)
+                            if (selectedGroup.children[0].material == null) {
+                                // Set group parent to group we just pushed to
+                                newMaterialGroup.addTo(selectedGroup);
+                                
+                            } else {
+                                // Set group to parent of group
+                                newMaterialGroup.addTo(selectedGroup.parent);
+                            }
                         }
 
                         newMaterialGroup.isOpen = true;
@@ -81,7 +84,7 @@ function createMaterialMenu() {
                                 obj.addTo(newMaterialGroup);
 
                                 // remove material group if there are no children
-                                if (selectedGroup.parent != 'root') {
+                                if (selectedGroup != undefined && selectedGroup.parent != 'root') {
                                     if (selectedGroup.children.length <= 0) {
                                         selectedGroup.remove();
                                     }
