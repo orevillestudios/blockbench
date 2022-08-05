@@ -1270,7 +1270,7 @@ Interface.definePanels(function() {
 			// Can hide group from here!
 			`<div
 				:key="updateMaterial"
-				v-if="material_directory == false"
+				v-if="material_directory === false || node.type === 'cube'"
 				class="outliner_object"
 				v-bind:class="{ cube: node.type === 'cube', group: node.type === 'group', selected: node.selected }"
 				v-bind:style="{'padding-left': indentation + 'px'}"
@@ -1349,10 +1349,13 @@ Interface.definePanels(function() {
 							materialFound = true
 						}
 					})
+					console.log(materialFound, ": ", this.node.name)
 					return materialFound
 				} else {
+					console.log(materialFound, ": ", this.node.name)
 					return false
 				}
+				return false
 			},
 			get_material_color() {
 				materials = getBoneMaterials();
