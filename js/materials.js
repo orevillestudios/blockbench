@@ -29,7 +29,8 @@ function createMaterialMenu() {
                 click() {
                     // Build object of material counts
                     materialDirectoryCount = {}
-                    countMaterialGroups();    
+                    countMaterialGroups();
+                    selectedIdx = selectedGroup.getParentArray().indexOf(selectedGroup);    
 
                     // Get currently selected group
                     let selectedGroup = getCurrentGroup();
@@ -65,14 +66,14 @@ function createMaterialMenu() {
                             console.log(selectedGroup)
                             if (selectedGroup.children[0].material == null) {
                                 // Set group parent to group we just pushed to
-                                newMaterialGroup.addTo(selectedGroup);
+                                newMaterialGroup.addTo(selectedGroup, selectedIdx);
                                 
                             } else {
                                 // Set group to parent of group
-                                newMaterialGroup.addTo(selectedGroup.parent);
+                                newMaterialGroup.addTo(selectedGroup.parent, selectedIdx);
                             }
                         }
-
+                        
                         newMaterialGroup.isOpen = true;
                         newMaterialGroup.materialValue = material.value;
 
