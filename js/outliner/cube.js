@@ -812,9 +812,12 @@ export class Cube extends OutlinerElement {
 					}
 				}
 
+				//Prevent Negative
+				if (sx < 0) sx = 0
+				if (sy < 0) sy = 0
 				//Calculate End Points
-				let endx = sx + size[0]
-				let endy = sy + size[1]
+				let endx = sx + size[0];
+				let endy = sy + size[1];
 				//Prevent overflow
 				if (endx > uv_width) {
 					sx = uv_width - (endx - sx)
@@ -824,9 +827,6 @@ export class Cube extends OutlinerElement {
 					sy = uv_height - (endy - sy)
 					endy = uv_height
 				}
-				//Prevent Negative
-				if (sx < 0) sx = 0
-				if (sy < 0) sy = 0
 				//Return
 				return [sx, sy, endx, endy]
 			}
