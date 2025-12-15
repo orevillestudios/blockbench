@@ -392,6 +392,7 @@ var codec = new Codec('java_block', {
 					if (obj.rotation.origin) {
 						base_cube.extend({origin: obj.rotation.origin});
 					}
+					Merge.boolean(base_cube, obj.rotation, 'rescale');
 					if (obj.rotation.axis) {
 						if (obj.rotation.angle && obj.rotation.axis) {
 							let axis = getAxisNumber(obj.rotation.axis)
@@ -405,7 +406,6 @@ var codec = new Codec('java_block', {
 							Merge.number(base_cube.origin, obj.rotation.origin, 1)
 							Merge.number(base_cube.origin, obj.rotation.origin, 2)
 						}
-						Merge.boolean(base_cube, obj.rotation, 'rescale')
 						if (typeof obj.rotation.axis === 'string') {
 							base_cube.rotation_axis = obj.rotation.axis
 						}

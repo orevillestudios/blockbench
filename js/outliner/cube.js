@@ -1047,7 +1047,7 @@ new Property(Cube, 'enum', 'render_order', {
 	}
 });
 new Property(Cube, 'boolean', 'rescale', {
-	condition: () => Format.rotation_limit,
+	condition: {features: ['java_cube_shading_properties']},
 	inputs: {
 		element_panel: {
 			input: {label: 'cube.rescale', description: 'cube.rescale.desc', type: 'checkbox'},
@@ -1139,10 +1139,12 @@ new NodePreviewController(Cube, {
 		let mesh = element.mesh;
 
 		if (Format.rotate_cubes && element.rescale === true) {
-			let axis = element.rotationAxis()||'y';
-			let rescale = getRescalingFactor(element.rotation[getAxisNumber(axis)]);
-			mesh.scale.set(rescale, rescale, rescale);
-			mesh.scale[axis] = 1;
+			let rescale = element.rotation.map(angle => getRescalingFactor(angle));
+			mesh.scale.set(
+				rescale[1] * rescale[2],
+				rescale[0] * rescale[2],
+				rescale[0] * rescale[1],
+			)
 		} else {
 			mesh.scale.set(1, 1, 1);
 		}
