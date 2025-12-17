@@ -1111,7 +1111,7 @@ export async function loadInstalledPlugins() {
 					
 					if (isApp && (
 						(installation.version && plugin.version && VersionUtil.compare(plugin.version, '<=', installation.version)) ||
-						Blockbench.isOlderThan(plugin.min_version)
+						(plugin.min_version && Blockbench.isOlderThan(plugin.min_version))
 					)) {
 						// Get from file
 						let promise = plugin.load(false);
