@@ -112,6 +112,7 @@ export const Animator = {
 				Mesh.preview_controller.updateGeometry(mesh);
 			}
 		}
+		Blockbench.dispatchEvent('display_default_pose', {reduced_updates});
 		if (!reduced_updates) scene.updateMatrixWorld()
 	},
 	resetParticles(optimized) {
