@@ -2535,5 +2535,7 @@
 	"settings.limit_brush_opacity_per_stroke": "Pinseldeckkraft pro Pinsenstrich begrenzen",
 	"settings.limit_brush_opacity_per_stroke.desc": "Begrenze die Deckkraft innerhalb eines einzelnen Pinsenstriches auf den Wert des Deckkraftreglers. Bei Verwendung eines weichen Pinsels kann hierbei ungewolltes Bildrauschen entstehen.",
 	"action.merge_splines": "Splines kombinieren",
-	"action.merge_splines.desc": "Kombiniere mehrere Splines zu einem"
+	"action.merge_splines.desc": "Kombiniere mehrere Splines zu einem",
+	"settings.default_java_block_version": "Default Java Block/Item Version",
+	"settings.default_java_block_version.desc": "Default format version when creating new Java block/item models or opening files without format version"
 }

@@ -2535,5 +2535,7 @@
 	"settings.limit_brush_opacity_per_stroke": "Limit Brush Opacity per Stroke",
 	"settings.limit_brush_opacity_per_stroke.desc": "Limit the opacity that a brush can apply to the value of the opacity slider during each brush stroke. With a smooth brush this behavior can potentially lead to slight unwanted noise.",
 	"action.merge_splines": "Merge Splines",
-	"action.merge_splines.desc": "Merge multiple splines into one"
+	"action.merge_splines.desc": "Merge multiple splines into one",
+	"settings.default_java_block_version": "Default Java Block/Item Version",
+	"settings.default_java_block_version.desc": "Default format version when creating new Java block/item models or opening files without format version"
 }

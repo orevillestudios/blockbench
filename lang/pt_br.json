@@ -2535,5 +2535,7 @@
 	"settings.limit_brush_opacity_per_stroke": "Limitar a opacidade do pincel por traço",
 	"settings.limit_brush_opacity_per_stroke.desc": "Limita a opacidade que um pincel pode aplicar ao valor do controle deslizante de opacidade durante cada pincelada. Com um pincel suave, esse comportamento pode gerar um leve ruído indesejado.",
 	"action.merge_splines": "Merge Splines",
-	"action.merge_splines.desc": "Merge multiple splines into one"
+	"action.merge_splines.desc": "Merge multiple splines into one",
+	"settings.default_java_block_version": "Default Java Block/Item Version",
+	"settings.default_java_block_version.desc": "Default format version when creating new Java block/item models or opening files without format version"
 }

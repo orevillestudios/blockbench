@@ -2535,5 +2535,7 @@
 	"settings.limit_brush_opacity_per_stroke": "Omezit Průhlednost Štětce na Jeden Tah",
 	"settings.limit_brush_opacity_per_stroke.desc": "Omezit průhlednost, kterou může štětec aplikovat podle hodnoty posuvníku při každém tahu. U hladkého štětce může toto způsobit nežádoucí šum.",
 	"action.merge_splines": "Merge Splines",
-	"action.merge_splines.desc": "Merge multiple splines into one"
+	"action.merge_splines.desc": "Merge multiple splines into one",
+	"settings.default_java_block_version": "Default Java Block/Item Version",
+	"settings.default_java_block_version.desc": "Default format version when creating new Java block/item models or opening files without format version"
 }
