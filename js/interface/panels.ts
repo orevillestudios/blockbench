@@ -255,12 +255,12 @@ export class Panel extends EventSystem {
 				this.container.append(this.sidebar_resize_handle);
 				let resize = (e1: MouseEvent | TouchEvent) => {
 					e1 = convertTouchEvent(e1);
-					let height_before = this.container.clientHeight;
+					let height_before = Math.max(this.container.clientHeight, this.position_data.height);
 					let started = false;
 					let direction = this.container.classList.contains('bottommost_panel') ? -1 : 1;
 					let other_panel_height_before = {};
 
-					let other_panels = this.slot == 'right_bar' ? Interface.getRightPanels() : Interface.getLeftPanels();
+					let other_panels: Panel[] = this.slot == 'right_bar' ? Interface.getRightPanels() : Interface.getLeftPanels();
 
 					e1.preventDefault();
 
@@ -269,6 +269,7 @@ export class Panel extends EventSystem {
 						if (!started && (Math.pow(e2.clientX - e1.clientX, 2) + Math.pow(e2.clientY - e1.clientY, 2)) > 12) {
 							started = true;
 							this.sidebar_resize_handle.classList.add('dragging');
+							makeSidebarFilled(other_panels, this);
 						}
 						if (!started) return;
 
@@ -282,15 +283,16 @@ export class Panel extends EventSystem {
 						this.position_data.fixed_height = true;
 						this.position_data.height = Math.max(height_before + change_amount, this.min_height);
 						this.update();
-						let height_difference = this.position_data.height - height1;
 
-						let panel_b = other_panels.find(p => p != this && p.resizable && p.min_height < (p.height??p.container.clientHeight));
+						/*
+						let height_difference = this.position_data.height - height1;
+						let panel_b = other_panels.findLast(p => p != this && p.resizable && p.min_height < (p.height??p.container.clientHeight));
 						if (sidebar_gap < 1 && panel_b && change_amount > 0) {
 							if (!other_panel_height_before[panel_b.id]) other_panel_height_before[panel_b.id] = (panel_b.height??panel_b.container.clientHeight);
 							panel_b.position_data.fixed_height = true;
 							panel_b.position_data.height = Math.max(panel_b.position_data.height - height_difference, this.min_height);
 							panel_b.update();
-						}
+						}*/
 					}
 					let stop = e2 => {
 						convertTouchEvent(e2);
@@ -298,6 +300,7 @@ export class Panel extends EventSystem {
 						removeEventListeners(document, 'mousemove touchmove', drag);
 						removeEventListeners(document, 'mouseup touchend', stop);
 						this.sidebar_resize_handle.classList.remove('dragging');
+						makeSidebarFilled(other_panels, this);
 					}
 					addEventListeners(document, 'mousemove touchmove', drag);
 					addEventListeners(document, 'mouseup touchend', stop);
@@ -861,6 +864,10 @@ export class Panel extends EventSystem {
 			this.dispatchEvent('change_zindex', {zindex: null});
 		}
 		position_data.slot = slot;
+
+		if (this.position_data && (this.previous_slot == 'right_bar' || this.previous_slot == 'left_bar')) {
+			makeSidebarFilled(this.previous_slot, this);
+		}
 		
 		this.updateSlot();
 		if (Panels[this.id]) {
@@ -994,7 +1001,14 @@ export class Panel extends EventSystem {
 				this.container.classList.add('topmost_panel');
 			}
 
-			if (this.node.clientHeight) {
+			if (this.node.clientHeight == 0 && this.open_attached_panel != this && !this.container.style.getPropertyValue('--main-panel-height')) {
+				// If panel acts as container but other panel is open, set main panel height the first time its opened to ensure tabs have the same height
+				this.container.append(this.node);
+				let height = this.node.clientHeight;
+				if (height) this.container.style.setProperty('--main-panel-height', height + 'px');
+				this.node.remove();
+
+			} else if (this.node.clientHeight) {
 				this.container.style.setProperty('--main-panel-height', this.node.clientHeight + 'px');
 			}
 
@@ -1207,6 +1221,31 @@ export function setupPanels() {
 		}
 	})
 	updateSidebarOrder();
+}
+
+export function makeSidebarFilled(target: Panel[] | 'left_bar' | 'right_bar', exclude_panel?: Panel) {
+	if (!Project) return;
+	let panels: Panel[];
+	try {
+		if (typeof target == 'string') {
+			panels = target == 'right_bar' ? Interface.getRightPanels() : Interface.getLeftPanels();
+		} else {
+			panels = target;
+		}
+		if (exclude_panel) {
+			panels = panels.slice();
+			panels.remove(exclude_panel);
+		}
+		let flex_panel = panels.find(p => p.growable && !p.position_data.fixed_height);
+		if (!flex_panel) {
+			flex_panel = panels.find(p => p.growable && p.position_data.fixed_height);
+			if (!flex_panel) return;
+			flex_panel.position_data.fixed_height = false;
+			flex_panel.update();
+		}
+	} catch (err) {
+		console.error(err);
+	}
 }
 
 export function updateInterfacePanels() {

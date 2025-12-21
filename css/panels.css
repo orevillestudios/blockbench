@@ -51,6 +51,9 @@
 	.panel.attached {
 		min-height: var(--main-panel-height);
 	}
+	.panel.attached.grow {
+		height: var(--main-panel-height);
+	}
 	body.is_mobile .panel {
 		overflow-y: auto;
 		overflow-x: hidden;
