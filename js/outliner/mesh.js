@@ -715,28 +715,32 @@ export class Mesh extends OutlinerElement {
 			// Calculate smooth normals
 			let face_normals = {};
 			let used_vertices = new Set();
-			for (let key in this.faces) {
-				let face = this.faces[key];
+			let {faces, vertices} = this;
+			let faces_by_vertex = {};
+
+			for (let key in faces) {
+				let face = faces[key];
 				if (face.vertices.length <= 2) continue;
 				face_normals[key] = face.getNormal(true);
-				face.vertices.forEach(vkey => used_vertices.add(vkey));
+				face.vertices.forEach(vkey => {
+					used_vertices.add(vkey);
+					if (!faces_by_vertex[vkey]) faces_by_vertex[vkey] = [];
+					faces_by_vertex[vkey].push(key);
+				});
 			}
-			for (let vkey in this.vertices) {
+			for (let vkey in vertices) {
 				if (used_vertices.has(vkey) == false) continue;
 
 				let average_normal = Reusable.vec8.set(0, 0, 0);
 				let normal_count = 0;
-				for (let fkey in this.faces) {
-					let face = this.faces[fkey];
-					if (face.vertices.length > 2 && face.vertices.includes(vkey)) {
-						let face_normal = face_normals[fkey];
-						if (!face_normals[fkey]) face_normals[fkey] = face_normal;
-						// if (face.getAngleTo(face) > 50) continue;
-						average_normal.x += face_normal[0];
-						average_normal.y += face_normal[1];
-						average_normal.z += face_normal[2];
-						normal_count++;
-					}
+				for (let fkey of faces_by_vertex[vkey]) {
+					let face_normal = face_normals[fkey];
+					if (!face_normals[fkey]) face_normals[fkey] = face_normal;
+					// if (face.getAngleTo(face) > 50) continue;
+					average_normal.x += face_normal[0];
+					average_normal.y += face_normal[1];
+					average_normal.z += face_normal[2];
+					normal_count++;
 				}
 				average_normal.divideScalar(normal_count);
 
@@ -1160,6 +1164,7 @@ new NodePreviewController(Mesh, {
 		let outline_positions = [];
 		mesh.outline.vertex_order.empty();
 		let {vertices, faces} = element;
+		let cached_face_vertices = {};
 		
 		let armature_bone;
 		let all_armature_bones = [];
@@ -1173,8 +1178,9 @@ new NodePreviewController(Mesh, {
 		const PLAIN_VERTEX_COLOR = [0, 0.03, 0.08];
 
 		function addVertexPosition(vkey, normal) {
-			position_array.push(...vertices[vkey]);
-			normal_array.push(...normal);
+			let vertex = vertices[vkey];
+			position_array.push(vertex[0], vertex[1], vertex[2]);
+			normal_array.push(normal[0], normal[1], normal[2]);
 			if (armature_bone) {
 				let weight = armature_bone.getVertexWeight(element, vkey) ?? 0;
 				let weight_sum = 0;
@@ -1218,8 +1224,9 @@ new NodePreviewController(Mesh, {
 
 		if (vertex_offsets) {
 			vertices = {};
-			for (let vkey in element.vertices) {
-				vertices[vkey] = element.vertices[vkey].slice();
+			let el_vertices = element.vertices;
+			for (let vkey in el_vertices) {
+				vertices[vkey] = el_vertices[vkey].slice();
 				if (vertex_offsets[vkey] instanceof Array) {
 					vertices[vkey].V3_add(vertex_offsets[vkey])
 				}
@@ -1251,6 +1258,7 @@ new NodePreviewController(Mesh, {
 				// Quad
 				let index_offset = position_array.length / 3;
 				let sorted_vertices = Modes.animate ? face.vertices : face.getSortedVertices();
+				cached_face_vertices[key] = sorted_vertices;
 				let face_indices = {};
 				face.vertices.forEach((vkey, i) => {
 					if (!vertices[vkey]) {
@@ -1350,7 +1358,7 @@ new NodePreviewController(Mesh, {
 				mesh.outline.vertex_order.push(face.vertices[0]);
 
 			} else if (face.vertices.length == 4) {
-				let sorted_vertices = Modes.animate ? face.vertices : face.getSortedVertices();
+				let sorted_vertices = cached_face_vertices[key] || face.vertices;
 				sorted_vertices.forEach((key, i) => {
 					mesh.outline.vertex_order.push(key);
 					if (i != 0) mesh.outline.vertex_order.push(key);
