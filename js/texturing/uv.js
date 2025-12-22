@@ -2786,7 +2786,8 @@ Interface.definePanels(function() {
 
 
 						let old_elements;
-						if (UVEditor.isBoxUV()) {
+						let is_box_uv = UVEditor.isBoxUV();
+						if (is_box_uv) {
 							old_elements = UVEditor.getMappableElements().slice();
 						}
 
@@ -2816,9 +2817,9 @@ Interface.definePanels(function() {
 							}
 
 							let elements;
-							if (UVEditor.isBoxUV()) {
+							if (is_box_uv) {
 								elements = Cube.all.filter(cube => !cube.locked);
-								elements.safePush(UVEditor.getMappableElements());
+								elements.safePush(...UVEditor.getMappableElements());
 							} else {
 								elements = UVEditor.getMappableElements();
 							}
