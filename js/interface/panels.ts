@@ -682,7 +682,7 @@ export class Panel extends EventSystem {
 	}
 	resize(e1: MouseEvent | TouchEvent) {
 		e1 = convertTouchEvent(e1);
-		let height_before = Math.max(this.container.clientHeight, this.position_data.height);
+		let height_before = this.container.clientHeight;
 		let started = false;
 		let direction = 1;
 		if (this.container.classList.contains('bottommost_panel') && !this.container.classList.contains('topmost_panel')) {
@@ -988,7 +988,7 @@ export class Panel extends EventSystem {
 					this.container.style.height = this.height + 'px';
 					this.container.classList.add('fixed_height');
 				} else {
-					this.container.style.height = null;
+					this.container.style.height = this.growable ? '0' : null;
 				}
 			}
 			if (!this.fixed_height) this.container.classList.remove('fixed_height');
