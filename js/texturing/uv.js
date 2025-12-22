@@ -150,7 +150,7 @@ export const UVEditor = {
 			let distance = Math.sqrt(Math.pow(delta[0], 2) + Math.pow(delta[1], 2));
 			if (distance < interval) {
 				return;
-			} else if (distance > interval) {
+			} else if (distance > interval && !(!Toolbox.selected.brush || Condition(Toolbox.selected.brush.floor_coordinates))) {
 				let rounded_distance = Math.floor(distance/interval)*interval;
 				x = Painter.current.x + (delta[0] / distance) * rounded_distance;
 				y = Painter.current.y + (delta[1] / distance) * rounded_distance;
