@@ -146,8 +146,14 @@ export const UVEditor = {
 			if (texture.img.naturalWidth + texture.img.naturalHeight == 0) return;
 
 			let interval = Toolbox.selected.brush?.interval || 1;
-			if (Math.sqrt(Math.pow(x - Painter.current.x, 2) + Math.pow(y - Painter.current.y, 2)) < interval) {
+			let delta = [x - Painter.current.x, y - Painter.current.y];
+			let distance = Math.sqrt(Math.pow(delta[0], 2) + Math.pow(delta[1], 2));
+			if (distance < interval) {
 				return;
+			} else if (distance > interval) {
+				let rounded_distance = Math.floor(distance/interval)*interval;
+				x = Painter.current.x + (delta[0] / distance) * rounded_distance;
+				y = Painter.current.y + (delta[1] / distance) * rounded_distance;
 			}
 			if (Painter.current.face !== UVEditor.getSelectedFaces(null)[0]) {
 				Painter.current.x = x
