@@ -959,7 +959,7 @@ export class Preview {
 							processed_faces.forEach(face => {
 								selected_vertices.safePush(...face.vertices);
 								let fkey = face.getFaceKey();
-								selected_faces.push(fkey);
+								selected_faces.safePush(fkey);
 							});
 						} else {
 							let face_vkeys = data.element.faces[data.face].vertices;
