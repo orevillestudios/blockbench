@@ -1575,22 +1575,35 @@ new NodePreviewController(Mesh, {
 			})
 		}
 		let line_colors = [];
+		let is_seam_tool = Toolbox.selected.id === 'seam_tool';
+		let selection_mode = BarItems.selection_mode.value;
+		if (!Modes.edit) selection_mode = 'object';
 		mesh.outline.vertex_order.forEach((key, i) => {
 			let key_b = Modes.edit && mesh.outline.vertex_order[i + ((i%2) ? -1 : 1) ];
-			let color;
+			let color = gizmo_colors.grid;
 			let selected;
-			if (!Modes.edit || BarItems.selection_mode.value == 'object') {
-				color = gizmo_colors.outline;
-			} else if (BarItems.selection_mode.value == 'edge' && selected_edges.find(edge => sameMeshEdge([key, key_b], edge))) {
-				color = white;
-				selected = true;
-			} else if ((BarItems.selection_mode.value == 'face' || BarItems.selection_mode.value == 'cluster') && face_outlines[key] && face_outlines[key].has(key_b)) {
-				color = white;
-				selected = true;
-			} else {
-				color = gizmo_colors.grid;
+			switch (selection_mode) {
+				case 'object': {
+					color = gizmo_colors.outline;
+					break;
+				}
+				case 'edge': {
+					if (selected_edges.find(edge => sameMeshEdge([key, key_b], edge))) {
+						color = white;
+						selected = true;
+					}
+					break;
+				}
+				case 'face':
+				case 'cluster': {
+					if (face_outlines[key] && face_outlines[key].has(key_b)) {
+						color = white;
+						selected = true;
+					}
+					break;
+				}
 			}
-			if (Toolbox.selected.id === 'seam_tool') {
+			if (is_seam_tool) {
 				let seam = element.getSeam([key, key_b]);
 				if (selected) {
 					if (seam == 'join') color = join_selected;
