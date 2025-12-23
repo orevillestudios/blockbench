@@ -273,8 +273,9 @@ export class MeshFace extends Face {
 			vertices[side_index],
 			vertices[side_index+1] || vertices[0]
 		]
-		for (let fkey in this.mesh.faces) {
-			let face = this.mesh.faces[fkey];
+		let faces = this.mesh.faces;
+		for (let fkey in faces) {
+			let face = faces[fkey];
 			if (face === this) continue;
 			if (face.vertices.includes(side_vertices[0]) && face.vertices.includes(side_vertices[1])) {
 				let f_vertices = face.getSortedVertices();
@@ -293,8 +294,9 @@ export class MeshFace extends Face {
 		return null;
 	}
 	getFaceKey() {
-		for (let fkey in this.mesh.faces) {
-			if (this.mesh.faces[fkey] == this) return fkey;
+		let faces = this.mesh.faces;
+		for (let fkey in faces) {
+			if (faces[fkey] == this) return fkey;
 		}
 	}
 	texelToLocalMatrix(uv, truncate_factor = [1, 1], truncated_uv, vertices = this.getSortedVertices()) {
